@@ -72,6 +72,9 @@ namespace ProfileImageService.Tests
                 .ReturnsAsync(responseMessage)
                 .Verifiable();
 
+
+            //HttpClientFactory.Create(new DelegatingHandler()
+
             return (new HttpClient(httpMessageHandlerMock.Object), httpMessageHandlerMock);
         }
     }

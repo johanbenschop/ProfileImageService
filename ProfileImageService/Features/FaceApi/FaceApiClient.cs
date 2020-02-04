@@ -21,12 +21,7 @@ namespace ProfileImageService.Features.FaceApi
             _httpClient.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", settings.ComputerVisionKey2);
         }
 
-        public Task<Face[]> DedectFaces(MemoryStream stream)
-        {
-            return DedectFaces(stream.ToArray());
-        }
-
-        public async Task<Face[]> DedectFaces(byte[] imageBytes)
+        public async Task<Face[]> DedectFaces(MemoryStream stream)
         {
             // Request parameters
             var queryString = HttpUtility.ParseQueryString(string.Empty);
@@ -34,7 +29,7 @@ namespace ProfileImageService.Features.FaceApi
             queryString["recognitionModel"] = "recognition_02";
 
             // Request body
-            using var content = new ByteArrayContent(imageBytes);
+            using var content = new ByteArrayContent(stream.ToArray());
             content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
 
             using var response = await _httpClient.PostAsync("/face/v1.0/detect?" + queryString, content);
@@ -43,6 +38,8 @@ namespace ProfileImageService.Features.FaceApi
                 var errorResponse = await response.Content.ReadAsAsync<ErrorResponse>();
                 throw new FaceApiException(errorResponse);
             }
+
+            stream.Seek(0, SeekOrigin.Begin);
 
             return await response.Content.ReadAsAsync<Face[]>();
         }

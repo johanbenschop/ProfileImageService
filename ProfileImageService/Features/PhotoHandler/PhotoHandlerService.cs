@@ -32,6 +32,8 @@ namespace ProfileImageService.Features.PhotoHandler
         {
             var faces = await _faceApiClient.DedectFaces(stream);
 
+            stream.Seek(0, SeekOrigin.Begin);
+
             var faceProcessingTasks = new Task<ProcessedFace>[faces.Length];
 
             for (var i = 0; i < faces.Length; i++)

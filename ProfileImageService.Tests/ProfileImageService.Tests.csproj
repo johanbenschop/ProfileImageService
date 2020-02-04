@@ -5,6 +5,8 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <IsPackable>false</IsPackable>
+    <LangVersion>8.0</LangVersion>
+    <Nullable>enable</Nullable>
     <UserSecretsId>8A5141D1-33BC-4B1E-8051-F57FB87FC5C5</UserSecretsId>
   </PropertyGroup>
 

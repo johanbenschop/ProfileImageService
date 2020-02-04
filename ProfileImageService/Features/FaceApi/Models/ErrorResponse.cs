@@ -2,12 +2,11 @@
 {
     public class ErrorResponse
     {
-        public string Code { get; set; }
-        public string Message { get; set; }
+        public Error Error { get; set; }
 
         public override string ToString()
         {
-            return $"Error from Azure Face API: {Code} - {Message}";
+            return $"Error from Azure Face API: {Error.Code} - {Error.Message}";
         }
     }
 }

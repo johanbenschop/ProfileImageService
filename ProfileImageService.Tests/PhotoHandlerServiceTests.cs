@@ -10,6 +10,8 @@ using Moq.Protected;
 using ProfileImageService.Features.FaceApi;
 using ProfileImageService.Features.PhotoHandler;
 using ProfileImageService.Features.RemoveBg;
+using System;
+using FluentAssertions;
 
 namespace ProfileImageService.Tests
 {
@@ -42,10 +44,10 @@ namespace ProfileImageService.Tests
             var faceApiClient = new FaceApiClient(faceApiHttpClient, _testFixture.Settings);
             var photoHandlerService = new PhotoHandlerService(faceApiClient, removeBgClient);
             
-            var photoStream = new MemoryStream(File.ReadAllBytes("assets/adult-1868750_1280.jpg"));
+            var sourcePhoto = new ReadOnlyMemory<byte>(File.ReadAllBytes("assets/adult-1868750_1280.jpg"));
 
             // Act
-            var processedFaces = await photoHandlerService.ProcessPhoto(photoStream);
+            var processedFaces = await photoHandlerService.ProcessPhoto(sourcePhoto);
 
             // Assert
             foreach (var processedFace in processedFaces)
@@ -54,11 +56,15 @@ namespace ProfileImageService.Tests
                 //await processedFace.PhotoOfFaceWithoutBackgroundStream.CopyToAsync(rawFile);
 
                 using var profileImageFile = File.Create("test-output/actual-profile-image.png");
-                await processedFace.ProfileImageStream.CopyToAsync(profileImageFile);
-                processedFace.ProfileImageStream.Seek(0, SeekOrigin.Begin);
+                await profileImageFile.WriteAsync(processedFace.ProfileImage);
+                using var rawProfileImageFile = File.Create("test-output/actual-raw-profile-image.png");
+                await rawProfileImageFile.WriteAsync(processedFace.PhotoOfFaceWithoutBackground);
 
-                var expectedStream = new MemoryStream(File.ReadAllBytes("assets/expected-profile-image.png"));
-                // TODO figured out how to assert
+                var expected = new Memory<byte>(File.ReadAllBytes("assets/expected-profile-image.png"));
+
+                processedFace.PhotoOfFaceWithoutBackground.Length.Should().BeGreaterThan(10000);
+                processedFace.ProfileImage.Length.Should().BeGreaterThan(10000);
+                //processedFace.ProfileImage.Should().Be(expected);
             }
         }
 

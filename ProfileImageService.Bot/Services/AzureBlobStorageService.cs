@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Storage;
@@ -21,14 +22,14 @@ namespace ProfileImageService.Bot.Services
 
         public async Task<string> SaveProcessedFaceAsync(ProcessedFace processedFace, CancellationToken cancellationToken = default)
         {
-            await SaveStreamToBlob(processedFace.PhotoOfFaceWithoutBackgroundStream, $"{processedFace.Face.FaceId}.png", cancellationToken);
-            return await SaveStreamToBlob(processedFace.ProfileImageStream, $"{processedFace.Face.FaceId}.png", cancellationToken);
+            await SaveMemoryToBlob(processedFace.PhotoOfFaceWithoutBackground, $"{processedFace.Face.FaceId}.png", cancellationToken);
+            return await SaveMemoryToBlob(processedFace.ProfileImage, $"{processedFace.Face.FaceId}.png", cancellationToken);
         }
 
-        private async Task<string> SaveStreamToBlob(Stream stream, string fileName, CancellationToken cancellationToken)
+        private async Task<string> SaveMemoryToBlob(ReadOnlyMemory<byte> meomory, string fileName, CancellationToken cancellationToken)
         {
             var cloudBlockBlob = _blobContainer.GetBlockBlobReference(fileName);
-            await cloudBlockBlob.UploadFromStreamAsync(stream, cancellationToken);
+            await cloudBlockBlob.UploadFromByteArrayAsync(meomory.ToArray(), 0, meomory.Length, cancellationToken);
 
             return cloudBlockBlob.Uri.AbsoluteUri;
         }

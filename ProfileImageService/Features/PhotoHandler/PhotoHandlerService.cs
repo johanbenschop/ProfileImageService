@@ -7,6 +7,7 @@ using ProfileImageService.Features.FaceApi.Models;
 using ProfileImageService.Features.PhotoHandler.Models;
 using ProfileImageService.Features.RemoveBg;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -28,11 +29,9 @@ namespace ProfileImageService.Features.PhotoHandler
             _backgroundRemovalApiClient = removeBgClient;
         }
 
-        public async Task<ProcessedFace[]> ProcessPhoto(MemoryStream stream)
+        public async Task<ProcessedFace[]> ProcessPhoto(ReadOnlyMemory<byte> sourcePhoto)
         {
-            var faces = await _faceApiClient.DedectFaces(stream);
-
-            stream.Seek(0, SeekOrigin.Begin);
+            var faces = await _faceApiClient.DedectFaces(sourcePhoto);
 
             var faceProcessingTasks = new Task<ProcessedFace>[faces.Length];
 
@@ -40,28 +39,29 @@ namespace ProfileImageService.Features.PhotoHandler
             {
                 if (Validate?.Invoke(faces[i]) ?? true)
                 {
-                    faceProcessingTasks[i] = ProcessFace(stream, faces[i]);
+                    faceProcessingTasks[i] = ProcessFace(sourcePhoto, faces[i]);
                 }
             }
 
             return await Task.WhenAll(faceProcessingTasks);
         }
 
-        private async Task<ProcessedFace> ProcessFace(Stream sourcePhotoStrean, Face face)
+        private async Task<ProcessedFace> ProcessFace(ReadOnlyMemory<byte> sourcePhotoStrean, Face face)
         {
-            using var sourcePhoto = Image.Load(sourcePhotoStrean);
+            using var sourcePhoto = Image.Load(sourcePhotoStrean.Span);
 
             var photoOfFace = ExtractFaceFromPhoto(sourcePhoto, face, 0.8);
 
-            var photoOfFaceWithoutBackgroundStream = await RemoveBackgrounFromPhoto(photoOfFace);
-            var photoOfFaceWithoutBackground = Image.Load(photoOfFaceWithoutBackgroundStream, new PngDecoder());
+            var photoOfFaceWithoutBackgroundMemory = await RemoveBackgrounFromPhoto(photoOfFace);
+            var photoOfFaceWithoutBackground = Image.Load(photoOfFaceWithoutBackgroundMemory.Span, new PngDecoder());
 
             var profileImage = CreateProfileImage(photoOfFaceWithoutBackground);
 
             var profileImageStream = new MemoryStream();
             profileImage.SaveAsPng(profileImageStream);
+            var profileImageMemory = new Memory<byte>(profileImageStream.GetBuffer());
 
-            return new ProcessedFace(face, photoOfFaceWithoutBackgroundStream, profileImageStream);
+            return new ProcessedFace(face, photoOfFaceWithoutBackgroundMemory, profileImageMemory);
         }
 
         private static Image ExtractFaceFromPhoto(Image sourcePhoto, Face face, double inflationFactor)
@@ -74,7 +74,7 @@ namespace ProfileImageService.Features.PhotoHandler
             // and since this isn't possible we need to first check if we're going to do so
             if (new Rectangle(Point.Empty, sourcePhoto.Size()).Contains(faceRectangle))
             {
-                // If inside the bounds tehn it's safe to crop
+                // If inside the bounds then it's safe to crop
                 sourcePhoto.Mutate(ctx => ctx.Crop(faceRectangle));
             }
             else
@@ -87,7 +87,7 @@ namespace ProfileImageService.Features.PhotoHandler
             return sourcePhoto;
         }
 
-        private Task<Stream> RemoveBackgrounFromPhoto(Image photoOfFace)
+        private Task<ReadOnlyMemory<byte>> RemoveBackgrounFromPhoto(Image photoOfFace)
         {
             using var memoryStream = new MemoryStream();
             photoOfFace.SaveAsPng(memoryStream);

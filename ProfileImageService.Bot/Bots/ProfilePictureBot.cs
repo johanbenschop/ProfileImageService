@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -43,10 +43,10 @@ namespace ProfileImageService.Bot.Bots
 
                 await turnContext.SendActivityAsync("Thank you! Please standby, this only takes a moment.", cancellationToken: cancellationToken);
 
-                var stream = await _httpClient.GetStreamAsync(attachment.ContentUrl);
-                var memoryStream = new MemoryStream();
-                await stream.CopyToAsync(memoryStream);
-                var processedFaces = await _pictureHandlerService.ProcessPhoto(memoryStream);
+                var sourcePhotoBytes = await _httpClient.GetByteArrayAsync(attachment.ContentUrl);
+                var sourcePhoto = new ReadOnlyMemory<byte>(sourcePhotoBytes);
+
+                var processedFaces = await _pictureHandlerService.ProcessPhoto(sourcePhoto);
 
                 foreach (var processedFace in processedFaces)
                 {

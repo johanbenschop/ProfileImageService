@@ -1,7 +1,9 @@
 ﻿using System;
 using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using ProfileImageService.Features.RemoveBg.Models;
 using ProfileImageService.Settings;
 
 namespace ProfileImageService.Features.RemoveBg
@@ -17,7 +19,7 @@ namespace ProfileImageService.Features.RemoveBg
             _httpClient.DefaultRequestHeaders.Add("X-Api-Key", settings.RemoveBgApiKey);
         }
 
-        public async Task<Stream> RemoveBackground(MemoryStream stream)
+        public async Task<ReadOnlyMemory<byte>> RemoveBackground(MemoryStream stream)
         {
             using var formData = new MultipartFormDataContent
             {
@@ -28,9 +30,15 @@ namespace ProfileImageService.Features.RemoveBg
 
             var response = await _httpClient.PostAsync("/v1.0/removebg", formData);
 
+            if (response.StatusCode == HttpStatusCode.BadRequest)
+            {
+                var errorResponse = await response.Content.ReadAsAsync<ErrorResponse>();
+                throw new RemoveBgException(errorResponse);
+            }
+
             response.EnsureSuccessStatusCode();
 
-            return await response.Content.ReadAsStreamAsync();
+            return new ReadOnlyMemory<byte>(await response.Content.ReadAsByteArrayAsync());
         }
     }
 }

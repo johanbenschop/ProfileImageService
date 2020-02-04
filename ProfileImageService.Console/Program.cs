@@ -31,16 +31,16 @@ namespace ProfileImageService.ConsoleApp
                 return true;
             };
 
-            var photoStream = new MemoryStream(File.ReadAllBytes("assets/adult-1868750_1280.jpg"));
-            var processedFaces = await photoHandlerService.ProcessPhoto(photoStream);
+            var sourcePhoto = new ReadOnlyMemory<byte>(File.ReadAllBytes("assets/adult-1868750_1280.jpg"));
+            var processedFaces = await photoHandlerService.ProcessPhoto(sourcePhoto);
 
             foreach (var processedFace in processedFaces)
             {
                 using var rawFile = File.Create("output/raw.png");
-                await processedFace.PhotoOfFaceWithoutBackgroundStream.CopyToAsync(rawFile);
+                await rawFile.WriteAsync(processedFace.PhotoOfFaceWithoutBackground);
 
                 using var profileImageFile = File.Create("output/profileImage.png");
-                await processedFace.ProfileImageStream.CopyToAsync(profileImageFile);
+                await profileImageFile.WriteAsync(processedFace.ProfileImage);
             }
         }
     }

@@ -1,8 +1,10 @@
-﻿namespace ProfileImageService.Features.RemoveBg.Models
+﻿using System;
+
+namespace ProfileImageService.Features.RemoveBg.Models
 {
     public class ErrorResponse
     {
-        public Error[] Errors { get; set; }
+        public Error[] Errors { get; set; } = Array.Empty<Error>();
 
         public override string ToString()
         {

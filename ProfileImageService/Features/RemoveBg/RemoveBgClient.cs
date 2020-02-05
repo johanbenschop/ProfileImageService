@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -19,11 +18,11 @@ namespace ProfileImageService.Features.RemoveBg
             _httpClient.DefaultRequestHeaders.Add("X-Api-Key", settings.RemoveBgApiKey);
         }
 
-        public async Task<ReadOnlyMemory<byte>> RemoveBackground(MemoryStream stream)
+        public async Task<ReadOnlyMemory<byte>> RemoveBackground(ReadOnlyMemory<byte> source)
         {
             using var formData = new MultipartFormDataContent
             {
-                { new ByteArrayContent(stream.ToArray()), "image_file", "the_file.png" },
+                { new ReadOnlyMemoryContent(source), "image_file", "the_file.jpg" },
                 { new StringContent("regular"), "size" },
                 { new StringContent("png"), "format" }
             };

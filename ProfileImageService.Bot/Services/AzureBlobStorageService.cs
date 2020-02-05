@@ -22,7 +22,7 @@ namespace ProfileImageService.Bot.Services
 
         public async Task<string> SaveProcessedFaceAsync(ProcessedFace processedFace, CancellationToken cancellationToken = default)
         {
-            await SaveMemoryToBlob(processedFace.PhotoOfFaceWithoutBackground, $"{processedFace.Face.FaceId}.png", cancellationToken);
+            await SaveMemoryToBlob(processedFace.PhotoOfFaceWithoutBackground, $"{processedFace.Face.FaceId}_raw.png", cancellationToken);
             return await SaveMemoryToBlob(processedFace.ProfileImage, $"{processedFace.Face.FaceId}.png", cancellationToken);
         }
 

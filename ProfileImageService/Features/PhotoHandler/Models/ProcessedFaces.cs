@@ -1,6 +1,5 @@
 ﻿using ProfileImageService.Features.FaceApi.Models;
 using System;
-using System.IO;
 
 namespace ProfileImageService.Features.PhotoHandler.Models
 {
@@ -10,11 +9,11 @@ namespace ProfileImageService.Features.PhotoHandler.Models
         public ReadOnlyMemory<byte> PhotoOfFaceWithoutBackground { get; set; }
         public ReadOnlyMemory<byte> ProfileImage { get; set; }
 
-        public ProcessedFace(Face face, ReadOnlyMemory<byte> photoOfFaceWithoutBackgroundStream, ReadOnlyMemory<byte> profileImageStream)
+        public ProcessedFace(Face face, ReadOnlyMemory<byte> photoOfFaceWithoutBackground, ReadOnlyMemory<byte> profileImage)
         {
             Face = face;
-            PhotoOfFaceWithoutBackground = photoOfFaceWithoutBackgroundStream;
-            ProfileImage = profileImageStream;
+            PhotoOfFaceWithoutBackground = photoOfFaceWithoutBackground;
+            ProfileImage = profileImage;
         }
     }
 }

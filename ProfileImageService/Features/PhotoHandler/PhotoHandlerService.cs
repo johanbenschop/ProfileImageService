@@ -7,7 +7,6 @@ using ProfileImageService.Features.FaceApi.Models;
 using ProfileImageService.Features.PhotoHandler.Models;
 using ProfileImageService.Features.RemoveBg;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -46,9 +45,9 @@ namespace ProfileImageService.Features.PhotoHandler
             return await Task.WhenAll(faceProcessingTasks);
         }
 
-        private async Task<ProcessedFace> ProcessFace(ReadOnlyMemory<byte> sourcePhotoStrean, Face face)
+        private async Task<ProcessedFace> ProcessFace(ReadOnlyMemory<byte> sourcePhotoMemory, Face face)
         {
-            using var sourcePhoto = Image.Load(sourcePhotoStrean.Span);
+            using var sourcePhoto = Image.Load(sourcePhotoMemory.Span);
 
             var photoOfFace = ExtractFaceFromPhoto(sourcePhoto, face, 0.8);
 
@@ -57,9 +56,7 @@ namespace ProfileImageService.Features.PhotoHandler
 
             var profileImage = CreateProfileImage(photoOfFaceWithoutBackground);
 
-            var profileImageStream = new MemoryStream();
-            profileImage.SaveAsPng(profileImageStream);
-            var profileImageMemory = new Memory<byte>(profileImageStream.GetBuffer());
+            profileImage.SaveAsPng(out var profileImageMemory);
 
             return new ProcessedFace(face, photoOfFaceWithoutBackgroundMemory, profileImageMemory);
         }
@@ -89,9 +86,9 @@ namespace ProfileImageService.Features.PhotoHandler
 
         private Task<ReadOnlyMemory<byte>> RemoveBackgrounFromPhoto(Image photoOfFace)
         {
-            using var memoryStream = new MemoryStream();
-            photoOfFace.SaveAsPng(memoryStream);
-            return _backgroundRemovalApiClient.RemoveBackground(memoryStream);
+            photoOfFace.SaveAsJpeg(out var rawProfileImage);
+
+            return _backgroundRemovalApiClient.RemoveBackground(rawProfileImage);
         }
 
         private static Image<Rgba32> CreateProfileImage(Image photoOfFaceWithoutBackground)

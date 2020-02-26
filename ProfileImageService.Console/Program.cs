@@ -3,9 +3,9 @@ using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
-using ProfileImageService.Features.FaceApi;
-using ProfileImageService.Features.PhotoHandler;
-using ProfileImageService.Features.RemoveBg;
+using ProfileImageService.Components.FaceApi;
+using ProfileImageService.Components.PhotoProcessor;
+using ProfileImageService.Components.RemoveBg;
 using ProfileImageService.Settings;
 
 namespace ProfileImageService.ConsoleApp
@@ -21,18 +21,19 @@ namespace ProfileImageService.ConsoleApp
 
             var settings = new ProfileImageServiceSettings();
             configuration.Bind(settings);
+
             var removeBgClient = new RemoveBgClient(new HttpClient(), settings);
             var faceApiClient = new FaceApiClient(new HttpClient(), settings);
-            var photoHandlerService = new PhotoHandlerService(faceApiClient, removeBgClient);
+            var photoProcessorService = new PhotoProcessorService(faceApiClient, removeBgClient);
 
-            photoHandlerService.Validate = face =>
+            photoProcessorService.Validate = face =>
             {
                 Console.WriteLine($"Validating face '{face.FaceId}'...");
                 return true;
             };
 
             var sourcePhoto = new ReadOnlyMemory<byte>(File.ReadAllBytes("assets/adult-1868750_1280.jpg"));
-            var processedFaces = await photoHandlerService.ProcessPhoto(sourcePhoto);
+            var processedFaces = await photoProcessorService.ProcessPhoto(sourcePhoto);
 
             foreach (var processedFace in processedFaces)
             {

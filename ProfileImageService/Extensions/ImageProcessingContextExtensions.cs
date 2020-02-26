@@ -61,8 +61,7 @@ namespace ProfileImageService.Extensions
 
         public static Image<Rgba32> CropAndPad(this Image image, Rectangle crop)
         {
-            var croppedImage = new Image<Rgba32>(Configuration.Default, crop.Width, crop.Height, Color.Azure);
-            //var croppedImage = new Image<Rgba32>(crop.Width, crop.Height);
+            var croppedImage = new Image<Rgba32>(crop.Width, crop.Height);
 
             croppedImage.Mutate(ctx => ctx.DrawImage(image, new Point(crop.X * -1, crop.Y * -1), 1));
 

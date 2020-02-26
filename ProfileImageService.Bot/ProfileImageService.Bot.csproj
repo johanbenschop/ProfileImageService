@@ -6,12 +6,12 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <LangVersion>8.0</LangVersion>
     <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <UserSecretsId>8A5141D1-33BC-4B1E-8051-F57FB87FC5C5</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Bot.Builder.Integration.AspNet.Core" Version="4.7.2" />
-    <PackageReference Include="Microsoft.Azure.Storage.Blob" Version="11.1.2" />
   </ItemGroup>
 
     <ItemGroup>

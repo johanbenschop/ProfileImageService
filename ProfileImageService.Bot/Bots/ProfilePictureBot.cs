@@ -5,20 +5,20 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
-using ProfileImageService.Bot.Services;
-using ProfileImageService.Features.PhotoHandler;
+using ProfileImageService.Components.AzureStorage;
+using ProfileImageService.Components.PhotoProcessor;
 
 namespace ProfileImageService.Bot.Bots
 {
     public class ProfilePictureBot : ActivityHandler
     {
-        private readonly PhotoHandlerService _pictureHandlerService;
+        private readonly PhotoProcessorService _photoProcessorService;
         private readonly AzureBlobStorageService _azureBlobStorageService;
         private readonly HttpClient _httpClient;
 
-        public ProfilePictureBot(PhotoHandlerService pictureHandlerService, AzureBlobStorageService azureBlobStorageService, IHttpClientFactory httpClientFactory)
+        public ProfilePictureBot(PhotoProcessorService photoProcessorService, AzureBlobStorageService azureBlobStorageService, IHttpClientFactory httpClientFactory)
         {
-            _pictureHandlerService = pictureHandlerService;
+            _photoProcessorService = photoProcessorService;
             _azureBlobStorageService = azureBlobStorageService;
             _httpClient = httpClientFactory.CreateClient();
         }
@@ -46,7 +46,7 @@ namespace ProfileImageService.Bot.Bots
                 var sourcePhotoBytes = await _httpClient.GetByteArrayAsync(attachment.ContentUrl);
                 var sourcePhoto = new ReadOnlyMemory<byte>(sourcePhotoBytes);
 
-                var processedFaces = await _pictureHandlerService.ProcessPhoto(sourcePhoto);
+                var processedFaces = await _photoProcessorService.ProcessPhoto(sourcePhoto);
 
                 foreach (var processedFace in processedFaces)
                 {

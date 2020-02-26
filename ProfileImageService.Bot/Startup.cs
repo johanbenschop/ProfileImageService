@@ -8,10 +8,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using ProfileImageService.Bot.Bots;
-using ProfileImageService.Bot.Services;
-using ProfileImageService.Features.FaceApi;
-using ProfileImageService.Features.PhotoHandler;
-using ProfileImageService.Features.RemoveBg;
+using ProfileImageService.Components.AzureStorage;
+using ProfileImageService.Components.FaceApi;
+using ProfileImageService.Components.PhotoProcessor;
+using ProfileImageService.Components.RemoveBg;
 using ProfileImageService.Settings;
 
 namespace ProfileImageService.Bot
@@ -40,7 +40,7 @@ namespace ProfileImageService.Bot
             services.AddHttpClient<RemoveBgClient>();
             services.AddHttpClient<FaceApiClient>();
 
-            services.AddTransient<PhotoHandlerService>();
+            services.AddTransient<PhotoProcessorService>();
 
             services.AddSingleton<AzureBlobStorageService>();
             services.AddSingleton(CloudStorageAccount.Parse(_configuration["BlobStorageConnectionString"]));

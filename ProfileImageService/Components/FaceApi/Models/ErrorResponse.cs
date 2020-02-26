@@ -6,7 +6,7 @@
 
         public override string ToString()
         {
-            return $"Error from Azure Face API: {Error.Code} - {Error.Message}";
+            return $"Error from Azure Face API: {Error.StatusCode}{Error.Code} - {Error.Message}";
         }
     }
 }

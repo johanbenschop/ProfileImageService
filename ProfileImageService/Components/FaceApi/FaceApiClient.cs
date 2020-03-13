@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -20,7 +21,7 @@ namespace ProfileImageService.Components.FaceApi
             _httpClient.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", settings.ComputerVisionKey2);
         }
 
-        public async Task<Face[]> DedectFaces(ReadOnlyMemory<byte> sourcePhoto)
+        public async Task<IEnumerable<Face>> DedectFaces(ReadOnlyMemory<byte> sourcePhoto)
         {
             // Request parameters
             var queryString = HttpUtility.ParseQueryString(string.Empty);
@@ -40,7 +41,7 @@ namespace ProfileImageService.Components.FaceApi
 
             response.EnsureSuccessStatusCode();
 
-            return await response.Content.ReadAsAsync<Face[]>();
+            return await response.Content.ReadAsAsync<IEnumerable<Face>>();
         }
     }
 }

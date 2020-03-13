@@ -10,6 +10,8 @@ using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.Primitives;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace ProfileImageService.Components.PhotoProcessor
 {
@@ -27,9 +29,9 @@ namespace ProfileImageService.Components.PhotoProcessor
             _backgroundRemovalApiClient = removeBgClient;
         }
 
-        public async Task<ProcessedFace[]> ProcessPhoto(ReadOnlyMemory<byte> sourcePhoto)
+        public async Task<IEnumerable<ProcessedFace>> ProcessPhoto(ReadOnlyMemory<byte> sourcePhoto)
         {
-            var faces = await _faceApiClient.DedectFaces(sourcePhoto);
+            var faces = (await _faceApiClient.DedectFaces(sourcePhoto)).ToArray();
 
             var faceProcessingTasks = new Task<ProcessedFace>[faces.Length];
 
@@ -48,7 +50,7 @@ namespace ProfileImageService.Components.PhotoProcessor
         {
             using var sourcePhoto = Image.Load(sourcePhotoMemory.Span);
 
-            var photoOfFace = ExtractFaceFromPhoto(sourcePhoto, face, 0.8);
+            var photoOfFace = ExtractFaceFromPhoto(sourcePhoto, face, 1.8);
 
             var photoOfFaceWithoutBackgroundMemory = await RemoveBackgrounFromPhoto(photoOfFace);
             var photoOfFaceWithoutBackground = Image.Load(photoOfFaceWithoutBackgroundMemory.Span, new PngDecoder());

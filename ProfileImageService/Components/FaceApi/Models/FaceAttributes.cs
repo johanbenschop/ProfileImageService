@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 
 namespace ProfileImageService.Components.FaceApi.Models
 {
@@ -16,7 +15,7 @@ namespace ProfileImageService.Components.FaceApi.Models
         public Exposure? Exposure { get; set; }
         public Noise? Noise { get; set; }
         public Makeup? Makeup { get; set; }
-        public IEnumerable<Accessory> Accessories { get; set; } = Enumerable.Empty<Accessory>();
+        public IEnumerable<Accessory> Accessories { get; set; } = new List<Accessory>();
         public Occlusion? Occlusion { get; set; }
         public Hair? Hair { get; set; }
     }

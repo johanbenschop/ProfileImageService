@@ -5,7 +5,7 @@ namespace ProfileImageService.Components.RemoveBg.Models
 {
     public class ErrorResponse
     {
-        public IEnumerable<Error> Errors { get; set; } = Enumerable.Empty<Error>();
+        public IEnumerable<Error> Errors { get; set; } = new List<Error>();
 
         public override string ToString()
         {

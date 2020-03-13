@@ -24,12 +24,13 @@ namespace ProfileImageService.ConsoleApp
 
             var removeBgClient = new RemoveBgClient(new HttpClient(), settings);
             var faceApiClient = new FaceApiClient(new HttpClient(), settings);
-            var photoProcessorService = new PhotoProcessorService(faceApiClient, removeBgClient);
-
-            photoProcessorService.Validate = face =>
+            var photoProcessorService = new PhotoProcessorService(faceApiClient, removeBgClient)
             {
-                Console.WriteLine($"Validating face '{face.FaceId}'...");
-                return true;
+                Validate = face =>
+                {
+                    Console.WriteLine($"Validating face '{face.FaceId}'...");
+                    return true;
+                }
             };
 
             var sourcePhoto = new ReadOnlyMemory<byte>(File.ReadAllBytes("assets/adult-1868750_1280.jpg"));

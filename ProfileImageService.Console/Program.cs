@@ -39,7 +39,7 @@ namespace ProfileImageService.ConsoleApp
             foreach (var processedFace in processedFaces)
             {
                 using var rawFile = File.Create("output/raw.png");
-                await rawFile.WriteAsync(processedFace.PhotoOfFaceWithoutBackground);
+                await rawFile.WriteAsync(processedFace.TransparentPhoto);
 
                 using var profileImageFile = File.Create("output/profileImage.png");
                 await profileImageFile.WriteAsync(processedFace.ProfileImage);

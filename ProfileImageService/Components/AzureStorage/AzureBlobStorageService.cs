@@ -21,7 +21,7 @@ namespace ProfileImageService.Components.AzureStorage
 
         public async Task<string> SaveProcessedFaceAsync(ProcessedFace processedFace, CancellationToken cancellationToken = default)
         {
-            await SaveMemoryToBlob(processedFace.PhotoOfFaceWithoutBackground, $"{processedFace.Face.FaceId}_raw.png", cancellationToken);
+            await SaveMemoryToBlob(processedFace.TransparentPhoto, $"{processedFace.Face.FaceId}_raw.png", cancellationToken);
             return await SaveMemoryToBlob(processedFace.ProfileImage, $"{processedFace.Face.FaceId}.png", cancellationToken);
         }
 

@@ -1,4 +1,5 @@
-﻿using SixLabors.ImageSharp;
+﻿using System.Numerics;
+using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.Primitives;
@@ -66,6 +67,16 @@ namespace ProfileImageService.Extensions
             croppedImage.Mutate(ctx => ctx.DrawImage(image, new Point(crop.X * -1, crop.Y * -1), 1));
 
             return croppedImage;
+        }
+
+        public static IImageProcessingContext Rotate(this IImageProcessingContext source, float degrees, Vector2 origin)
+        {
+            var affineBuilder = new AffineTransformBuilder();
+            affineBuilder.AppendRotationDegrees(degrees, origin);
+
+            source.Transform(affineBuilder);
+
+            return source;
         }
     }
 }

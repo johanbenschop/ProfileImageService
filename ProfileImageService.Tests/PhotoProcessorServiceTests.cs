@@ -55,14 +55,21 @@ namespace ProfileImageService.Tests
                 //using var rawFile = File.Create("test-output/actual-profile-image.png");
                 //await processedFace.PhotoOfFaceWithoutBackgroundStream.CopyToAsync(rawFile);
 
+                using var debugImageFile = File.Create("test-output/debug-image.png");
+                await debugImageFile.WriteAsync(processedFace.DebugImage);
+
+                using var croppedPhotoFile = File.Create("test-output/actual-cropped-photo.png");
+                await croppedPhotoFile.WriteAsync(processedFace.CroppedPhoto);
+
                 using var profileImageFile = File.Create("test-output/actual-profile-image.png");
                 await profileImageFile.WriteAsync(processedFace.ProfileImage);
+
                 using var rawProfileImageFile = File.Create("test-output/actual-raw-profile-image.png");
-                await rawProfileImageFile.WriteAsync(processedFace.PhotoOfFaceWithoutBackground);
+                await rawProfileImageFile.WriteAsync(processedFace.TransparentPhoto);
 
                 var expected = new Memory<byte>(File.ReadAllBytes("assets/expected-profile-image.png"));
 
-                processedFace.PhotoOfFaceWithoutBackground.Length.Should().BeGreaterThan(10000);
+                processedFace.TransparentPhoto.Length.Should().BeGreaterThan(10000);
                 processedFace.ProfileImage.Length.Should().BeGreaterThan(10000);
 
                 // TODO do some tolerant image comparison

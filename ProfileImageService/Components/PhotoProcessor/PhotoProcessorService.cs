@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using ProfileImageService.Components.FaceApi;
 using ProfileImageService.Extensions;
 using ProfileImageService.Components.FaceApi.Models;
@@ -10,18 +12,17 @@ using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.Primitives;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace ProfileImageService.Components.PhotoProcessor
 {
     public class PhotoProcessorService
     {
-        private const string IndiBackground = "2B3444";
+        private const string BackgroundColor = "2B3444";
+        private const double InflationFactor = .8;
         private readonly FaceApiClient _faceApiClient;
         private readonly RemoveBgClient _backgroundRemovalApiClient;
 
-        public Func<Face, bool>? Validate { get; set; }
+        public Func<Face, bool>? Validate { get; set; } // TODO refactor this be be a service impl.
 
         public PhotoProcessorService(FaceApiClient faceApiClient, RemoveBgClient removeBgClient)
         {
@@ -48,48 +49,79 @@ namespace ProfileImageService.Components.PhotoProcessor
 
         private async Task<ProcessedFace> ProcessFace(ReadOnlyMemory<byte> sourcePhotoMemory, Face face)
         {
+            var processedFace = new ProcessedFace(face);
+
             using var sourcePhoto = Image.Load(sourcePhotoMemory.Span);
 
-            var photoOfFace = ExtractFaceFromPhoto(sourcePhoto, face, 1.8);
+            {
+                var debugImage = DrawDebugImage(sourcePhoto, face, InflationFactor);
+                processedFace.DebugImage = debugImage.SaveAsJpeg();
+            }
 
-            var photoOfFaceWithoutBackgroundMemory = await RemoveBackgrounFromPhoto(photoOfFace);
-            var photoOfFaceWithoutBackground = Image.Load(photoOfFaceWithoutBackgroundMemory.Span, new PngDecoder());
+            var croppedPhoto = CropFace(sourcePhoto, face, InflationFactor);
+            processedFace.CroppedPhoto = croppedPhoto.SaveAsPng();
 
-            var profileImage = CreateProfileImage(photoOfFaceWithoutBackground);
+            processedFace.TransparentPhoto = await _backgroundRemovalApiClient.RemoveBackground(processedFace.CroppedPhoto);
+            var transparentPhoto = Image.Load(processedFace.TransparentPhoto.Span, new PngDecoder());
 
-            profileImage.SaveAsPng(out var profileImageMemory);
+            var profileImage = CreateProfileImage(transparentPhoto);
+            processedFace.ProfileImage = profileImage.SaveAsPng();
 
-            return new ProcessedFace(face, photoOfFaceWithoutBackgroundMemory, profileImageMemory);
+            return processedFace;
         }
 
-        private static Image ExtractFaceFromPhoto(Image sourcePhoto, Face face, double inflationFactor)
+        private static Image CropFace(Image sourcePhoto, Face face, double inflationFactor)
         {
-            var (top, left, width, height) = face.FaceRectangle;
-            var faceRectangle = new Rectangle(left, top, width, height);
-            faceRectangle.Inflate((int)(faceRectangle.Width * inflationFactor), (int)(faceRectangle.Width * inflationFactor));
+            var cropRectangle = face.FaceRectangle.ToRectangle();
 
-            // Due to the inflation it is possile we're going to crop outside of the photo
-            // and since this isn't possible we need to first check if we're going to do so
-            if (new Rectangle(Point.Empty, sourcePhoto.Size()).Contains(faceRectangle))
+            cropRectangle.Inflate((int)(cropRectangle.Width * inflationFactor), (int)(cropRectangle.Width * inflationFactor));
+
+            sourcePhoto.Mutate(ctx =>
             {
-                // If inside the bounds then it's safe to crop
-                sourcePhoto.Mutate(ctx => ctx.Crop(faceRectangle));
+                var centerPoint = new PointF(cropRectangle.Left + (cropRectangle.Width / 2), cropRectangle.Top + (cropRectangle.Height / 2));
+                ctx.Rotate(-face.FaceAttributes?.HeadPose?.Roll ?? 0, centerPoint);
+            });
+
+            // Due to the inflation and rotation it is possile we're going to crop outside of the photo
+            // and since this isn't allowed we need to first check if we're going to do so
+            if (new Rectangle(Point.Empty, sourcePhoto.Size()).Contains(cropRectangle))
+            {
+                // If inside the bounds then it's safe to just crop
+                sourcePhoto.Mutate(ctx =>
+                {
+                    ctx.Crop(cropRectangle);
+                });
             }
             else
             {
-                // Else we need to 'crop and pad', this copies the photo somewhere onto a new
-                // canvas. This will create a white region, but that will be removed later on
-                sourcePhoto = sourcePhoto.CropAndPad(faceRectangle);
+                // Else we need to 'crop and pad', this creates a new image with the size of the
+                // crop rectangle and places the photo at the correct location on it
+                sourcePhoto = sourcePhoto.CropAndPad(cropRectangle);
             }
 
             return sourcePhoto;
         }
 
-        private Task<ReadOnlyMemory<byte>> RemoveBackgrounFromPhoto(Image photoOfFace)
+        private static Image DrawDebugImage(Image sourcePhoto, Face face, double inflationFactor)
         {
-            photoOfFace.SaveAsJpeg(out var rawProfileImage);
+            return sourcePhoto.Clone(ctx =>
+            {
+                var cropRectangle = face.FaceRectangle.ToRectangle();
+                ctx.Draw(Rgba32.Red, 4, cropRectangle);
 
-            return _backgroundRemovalApiClient.RemoveBackground(rawProfileImage);
+                cropRectangle.Inflate((int)(cropRectangle.Width * inflationFactor), (int)(cropRectangle.Width * inflationFactor));
+
+                ctx.Draw(Rgba32.Orange, 4, cropRectangle);
+
+                var centerPoint = new PointF(cropRectangle.Left + (cropRectangle.Width / 2), cropRectangle.Top + (cropRectangle.Height / 2));
+                ctx.Rotate(-face.FaceAttributes?.HeadPose?.Roll ?? 0, centerPoint);
+
+                ctx.Draw(Rgba32.Green, 4, cropRectangle);
+                ctx.Rotate(face.FaceAttributes?.HeadPose?.Roll ?? 0, centerPoint);
+                ctx.EntropyCrop();
+
+                ctx.BackgroundColor(Rgba32.White);
+            });
         }
 
         private static Image<Rgba32> CreateProfileImage(Image photoOfFaceWithoutBackground)
@@ -98,9 +130,9 @@ namespace ProfileImageService.Components.PhotoProcessor
 
             profileImage.Mutate(ctx =>
             {
-                ctx.ApplyPhoto(photoOfFaceWithoutBackground);
+                ctx.BackgroundColor(Rgba32.FromHex(BackgroundColor));
                 ctx.ApplyFrame();
-                ctx.BackgroundColor(Rgba32.FromHex(IndiBackground));
+                ctx.ApplyPhoto(photoOfFaceWithoutBackground);
                 ctx.ApplyRoundedCorners(256);
             });
 

@@ -21,7 +21,7 @@ namespace ProfileImageService.Components.FaceApi
             _httpClient.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", settings.ComputerVisionKey2);
         }
 
-        public async Task<IEnumerable<Face>> DedectFaces(ReadOnlyMemory<byte> sourcePhoto)
+        public async Task<IEnumerable<Face>> DetectFaces(ReadOnlyMemory<byte> sourcePhoto)
         {
             // Request parameters
             var queryString = HttpUtility.ParseQueryString(string.Empty);

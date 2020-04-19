@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -32,7 +32,7 @@ namespace ProfileImageService.Components.PhotoProcessor
 
         public async Task<IEnumerable<ProcessedFace>> ProcessPhoto(ReadOnlyMemory<byte> sourcePhoto)
         {
-            var faces = (await _faceApiClient.DedectFaces(sourcePhoto)).ToArray();
+            var faces = (await _faceApiClient.DetectFaces(sourcePhoto)).ToArray();
 
             var faceProcessingTasks = new Task<ProcessedFace>[faces.Length];
 

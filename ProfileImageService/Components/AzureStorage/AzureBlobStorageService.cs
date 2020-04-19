@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Storage;
@@ -25,10 +25,10 @@ namespace ProfileImageService.Components.AzureStorage
             return await SaveMemoryToBlob(processedFace.ProfileImage, $"{processedFace.Face.FaceId}.png", cancellationToken);
         }
 
-        private async Task<string> SaveMemoryToBlob(ReadOnlyMemory<byte> meomory, string fileName, CancellationToken cancellationToken)
+        private async Task<string> SaveMemoryToBlob(ReadOnlyMemory<byte> memory, string fileName, CancellationToken cancellationToken)
         {
             var cloudBlockBlob = _blobContainer.GetBlockBlobReference(fileName);
-            await cloudBlockBlob.UploadFromByteArrayAsync(meomory.ToArray(), 0, meomory.Length, cancellationToken);
+            await cloudBlockBlob.UploadFromByteArrayAsync(memory.ToArray(), 0, memory.Length, cancellationToken);
 
             return cloudBlockBlob.Uri.AbsoluteUri;
         }

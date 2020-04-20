@@ -12,6 +12,7 @@ using ProfileImageService.Components.AzureStorage;
 using ProfileImageService.Components.FaceApi;
 using ProfileImageService.Components.PhotoProcessor;
 using ProfileImageService.Components.RemoveBg;
+using ProfileImageService.Designs;
 using ProfileImageService.Settings;
 
 namespace ProfileImageService.Bot
@@ -44,6 +45,9 @@ namespace ProfileImageService.Bot
 
             services.AddSingleton<AzureBlobStorageService>();
             services.AddSingleton(CloudStorageAccount.Parse(_configuration["BlobStorageConnectionString"]));
+
+            //services.AddSingleton<IFrameDesign, IndivirtualDesign>();
+            services.AddSingleton<IDesign, SentiaDesign>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

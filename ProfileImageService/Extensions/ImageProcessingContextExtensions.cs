@@ -9,18 +9,19 @@ namespace ProfileImageService.Extensions
 {
     public static class ImageProcessingContextExtensions
     {
-        public static void ApplyPhoto(this IImageProcessingContext ctx, Image image)
+        public static void DrawPhoto(this IImageProcessingContext ctx, Image image)
         {
             using var overlayImage = image;
+
             var result = overlayImage.Clone(
                 ctx2 => ctx2.Resize(new ResizeOptions { Mode = ResizeMode.Crop, Size = new Size(512) }));
 
             ctx.DrawImage(result, PixelColorBlendingMode.Normal, 1);
         }
 
-        public static void ApplyFrame(this IImageProcessingContext ctx)
+        public static void DrawFrame(this IImageProcessingContext ctx, string framePath)
         {
-            using var overlayImage = Image.Load("assets/frame.png");
+            using var overlayImage = Image.Load(framePath);
             ctx.DrawImage(overlayImage, PixelColorBlendingMode.Normal, 1);
         }
 

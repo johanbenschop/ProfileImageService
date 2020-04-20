@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using ProfileImageService.Components.FaceApi;
 using ProfileImageService.Components.PhotoProcessor;
 using ProfileImageService.Components.RemoveBg;
+using ProfileImageService.Designs;
 using ProfileImageService.Settings;
 
 namespace ProfileImageService.ConsoleApp
@@ -22,18 +23,24 @@ namespace ProfileImageService.ConsoleApp
             var settings = new ProfileImageServiceSettings();
             configuration.Bind(settings);
 
+            var path = "assets/adult-1868750_1280.jpg";
+
             var removeBgClient = new RemoveBgClient(new HttpClient(), settings);
             var faceApiClient = new FaceApiClient(new HttpClient(), settings);
-            var photoProcessorService = new PhotoProcessorService(faceApiClient, removeBgClient)
-            {
-                Validate = face =>
-                {
-                    Console.WriteLine($"Validating face '{face.FaceId}'...");
-                    return true;
-                }
-            };
+            //var design = new IndivirtualDesign();
+            var design = new SentiaDesign();
 
-            var sourcePhoto = new ReadOnlyMemory<byte>(File.ReadAllBytes("assets/adult-1868750_1280.jpg"));
+            var photoProcessorService = new PhotoProcessorService(faceApiClient, removeBgClient, design);
+
+            //{
+            //    Validate = face =>
+            //    {
+            //        Console.WriteLine($"Validating face '{face.FaceId}'...");
+            //        return true;
+            //    }
+            //}
+
+            var sourcePhoto = new ReadOnlyMemory<byte>(File.ReadAllBytes(path));
             var processedFaces = await photoProcessorService.ProcessPhoto(sourcePhoto);
 
             foreach (var processedFace in processedFaces)

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Storage;
@@ -9,14 +9,12 @@ namespace ProfileImageService.Components.AzureStorage
 {
     public class AzureBlobStorageService
     {
-        private readonly CloudStorageAccount _storageAccount;
         private readonly CloudBlobContainer _blobContainer;
 
         public AzureBlobStorageService(CloudStorageAccount storageAccount)
         {
-            _storageAccount = storageAccount;
-            var cloudBlobClient = _storageAccount.CreateCloudBlobClient();
-            _blobContainer = cloudBlobClient.GetContainerReference("profilepictures");
+            var cloudBlobClient = storageAccount.CreateCloudBlobClient();
+            _blobContainer = cloudBlobClient.GetContainerReference("profilepictures"); // TODO magic string
         }
 
         public async Task<string> SaveProcessedFaceAsync(ProcessedFace processedFace, CancellationToken cancellationToken = default)

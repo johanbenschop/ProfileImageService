@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Text;
 using System.Net;
@@ -12,6 +12,7 @@ using FluentAssertions;
 using ProfileImageService.Components.RemoveBg;
 using ProfileImageService.Components.FaceApi;
 using ProfileImageService.Components.PhotoProcessor;
+using ProfileImageService.Designs;
 
 namespace ProfileImageService.Tests
 {
@@ -42,7 +43,8 @@ namespace ProfileImageService.Tests
 
             var removeBgClient = new RemoveBgClient(removeBgHttpClient, _testFixture.Settings);
             var faceApiClient = new FaceApiClient(faceApiHttpClient, _testFixture.Settings);
-            var photoProcessorService = new PhotoProcessorService(faceApiClient, removeBgClient);
+            var design = new LiveCodersDesign(); //SentiaDesign();
+            var photoProcessorService = new PhotoProcessorService(faceApiClient, removeBgClient, design);
             
             var sourcePhoto = new ReadOnlyMemory<byte>(File.ReadAllBytes("assets/adult-1868750_1280.jpg"));
 

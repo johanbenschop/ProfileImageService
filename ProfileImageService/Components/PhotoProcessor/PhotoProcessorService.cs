@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -17,17 +17,19 @@ namespace ProfileImageService.Components.PhotoProcessor
 {
     public class PhotoProcessorService
     {
-        private const string BackgroundColor = "2B3444";
         private const double InflationFactor = .8;
         private readonly FaceApiClient _faceApiClient;
         private readonly RemoveBgClient _backgroundRemovalApiClient;
+        private readonly IDesign _design;
+        private readonly IPhotoValidator? _photoValidator;
 
-        public Func<Face, bool>? Validate { get; set; } // TODO refactor this be be a service impl.
-
-        public PhotoProcessorService(FaceApiClient faceApiClient, RemoveBgClient removeBgClient)
+        public PhotoProcessorService(FaceApiClient faceApiClient, RemoveBgClient removeBgClient,
+            IDesign design, IPhotoValidator? photoValidator = null)
         {
             _faceApiClient = faceApiClient;
             _backgroundRemovalApiClient = removeBgClient;
+            _design = design;
+            _photoValidator = photoValidator;
         }
 
         public async Task<IEnumerable<ProcessedFace>> ProcessPhoto(ReadOnlyMemory<byte> sourcePhoto)
@@ -38,7 +40,7 @@ namespace ProfileImageService.Components.PhotoProcessor
 
             for (var i = 0; i < faces.Length; i++)
             {
-                if (Validate?.Invoke(faces[i]) ?? true)
+                if (_photoValidator?.Validate(faces[i]) ?? true)
                 {
                     faceProcessingTasks[i] = ProcessFace(sourcePhoto, faces[i]);
                 }
@@ -53,6 +55,7 @@ namespace ProfileImageService.Components.PhotoProcessor
 
             using var sourcePhoto = Image.Load(sourcePhotoMemory.Span);
 
+            // TODO add toggle from settings
             {
                 var debugImage = DrawDebugImage(sourcePhoto, face, InflationFactor);
                 processedFace.DebugImage = debugImage.SaveAsJpeg();
@@ -64,7 +67,7 @@ namespace ProfileImageService.Components.PhotoProcessor
             processedFace.TransparentPhoto = await _backgroundRemovalApiClient.RemoveBackground(processedFace.CroppedPhoto);
             var transparentPhoto = Image.Load(processedFace.TransparentPhoto.Span, new PngDecoder());
 
-            var profileImage = CreateProfileImage(transparentPhoto);
+            var profileImage = _design.ApplyDesign(transparentPhoto);
             processedFace.ProfileImage = profileImage.SaveAsPng();
 
             return processedFace;
@@ -82,7 +85,7 @@ namespace ProfileImageService.Components.PhotoProcessor
                 ctx.Rotate(-face.FaceAttributes?.HeadPose?.Roll ?? 0, centerPoint);
             });
 
-            // Due to the inflation and rotation it is possile we're going to crop outside of the photo
+            // Due to the inflation and rotation it is possible we're going to crop outside of the photo
             // and since this isn't allowed we need to first check if we're going to do so
             if (new Rectangle(Point.Empty, sourcePhoto.Size()).Contains(cropRectangle))
             {
@@ -122,21 +125,6 @@ namespace ProfileImageService.Components.PhotoProcessor
 
                 ctx.BackgroundColor(Rgba32.White);
             });
-        }
-
-        private static Image<Rgba32> CreateProfileImage(Image photoOfFaceWithoutBackground)
-        {
-            var profileImage = new Image<Rgba32>(512, 512);
-
-            profileImage.Mutate(ctx =>
-            {
-                ctx.BackgroundColor(Rgba32.FromHex(BackgroundColor));
-                ctx.ApplyFrame();
-                ctx.ApplyPhoto(photoOfFaceWithoutBackground);
-                ctx.ApplyRoundedCorners(256);
-            });
-
-            return profileImage;
         }
     }
 }
